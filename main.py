@@ -52,7 +52,7 @@ def create_tagged_corpus(wiki_text_path):
             fout.write(f"{title}\t{' '.join(content)}\n")  # title_of_article [TAB] words of the article
 
 def get_tagged_corpus():
-    wiki_text_path = DATA_DIR / "wiki_text.txt"
+    wiki_text_path = DATA_DIR / "wiki.txt.gz"
     if not wiki_text_path.exists():
         create_tagged_corpus(wiki_text_path)
     return TaggedWikiCorpus(wiki_text_path)
