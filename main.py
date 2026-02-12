@@ -1,4 +1,5 @@
 import argparse
+import logging
 from pathlib import Path
 
 import smart_open
@@ -6,6 +7,8 @@ from gensim.corpora.wikicorpus import WikiCorpus, tokenize
 from gensim.models import Doc2Vec
 from gensim.models.doc2vec import TaggedDocument
 from tqdm import tqdm
+
+logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
 
 ROOT_DIR = Path(__file__).parent
 DATA_DIR = ROOT_DIR / "data"
@@ -46,7 +49,7 @@ def create_tagged_corpus(wiki_text_path):
         metadata=True,  # also return the article titles and ids when parsing
         dictionary={},  # don't start processing the data yet
     )
-    with smart_open.open(DATA_DIR / "wiki.txt.gz", "w", encoding='utf8') as fout:
+    with smart_open.open(wiki_text_path, "w", encoding='utf8') as fout:
         for article_no, (content, (page_id, title)) in tqdm(enumerate(wiki.get_texts()), total=6_000_000):
             title = ' '.join(title.split())
             fout.write(f"{title}\t{' '.join(content)}\n")  # title_of_article [TAB] words of the article
@@ -60,13 +63,14 @@ def get_tagged_corpus():
 def train_model(tagged_corpus, vector_size, epochs):
     model = Doc2Vec(vector_size=vector_size, min_count=2, epochs=epochs)
     model.build_vocab(tagged_corpus)
-    model.train(tagged_corpus, total_examples=model.corpus_count, epochs=model.epochs)
+    model.train(tagged_corpus, total_examples=model.corpus_count, epochs=model.epochs, report_delay=60*5)
     model.save(MODEL_DIR / f"doc2vec_{vector_size}d.model")
 
 def main():
     args = parse_args()
     print(f"Training Doc2Vec model with {args.epochs} epochs and vector size {args.vector_size}...")
     tagged_corpus = get_tagged_corpus()
+    print("Corpus loaded. Starting training...")
     train_model(tagged_corpus, args.vector_size, args.epochs)
     print("Training complete! Model saved.")
     
